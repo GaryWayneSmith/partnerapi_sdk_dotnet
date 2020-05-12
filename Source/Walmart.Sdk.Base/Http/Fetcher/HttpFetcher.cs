@@ -15,70 +15,72 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Threading;
-using Walmart.Sdk.Base.Http.Exception;
-using Walmart.Sdk.Base.Primitive;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using Walmart.Sdk.Base.Http.Exception;
 
 namespace Walmart.Sdk.Base.Http.Fetcher
 {
-    public class HttpFetcher : BaseFetcher
-    {
-        private IHttpClient client;
+	public class HttpFetcher : BaseFetcher
+	{
+		private IHttpClient client;
 
-        public HttpFetcher(Primitive.Config.IHttpConfig config, IHttpClient httpClient) : base(config)
-        {
-            client = httpClient;
-            client.BaseAddress = new Uri(config.BaseUrl);
-            client.Timeout = TimeSpan.FromMilliseconds(config.RequestTimeoutMs);
-        }
+		public HttpFetcher(Primitive.Config.IHttpConfig config, IHttpClient httpClient) : base(config)
+		{
+			client = httpClient;
+			client.BaseAddress = new Uri(config.BaseUrl);
+			client.Timeout = TimeSpan.FromMilliseconds(config.RequestTimeoutMs);
+		}
 
-        override public async Task<IResponse> ExecuteAsync(IRequest request) 
-        {
-            if (request.EndpointUri == "") {
-                throw new Base.Exception.InvalidValueException("Empty URI for the endpoint!");
-            }
+		override public async Task<IResponse> ExecuteAsync(IRequest request)
+		{
+			if (request.EndpointUri == "")
+			{
+				throw new Base.Exception.InvalidValueException("Empty URI for the endpoint!");
+			}
 
-            // we add them when all data is in place
-            request.FinalizePreparation();
-            try
-            {
-                var response = await client.SendAsync(request);
+			// Ensure that we have a valid token
+			await request.ValidateAccessToken();
 
-                if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
-                {
-                    // 503 Service Unavailable
-                    throw new GatewayException("Service is unavailable, gateway connection error");
-                }
+			// we add them when all data is in place
+			request.FinalizePreparation();
+			try
+			{
 
-                if (response.StatusCode == (HttpStatusCode)429)
-                {
-                    // 429 Too many requests
-                    throw new ThrottleException("HTTP request was throttled");
-                }
+				await Util.LogToFile.WriteLogString(request.CorrelationId, request.HttpRequest.RequestUri.ToString(), "Uri", ".txt");
+				await Util.LogToFile.WriteLogString(request.CorrelationId, request.HttpRequest.Content != null ? await request.HttpRequest.Content.ReadAsStringAsync() : "NO PAYLOAD", "Request", config.ApiFormat.ToString().ToLower());
 
-                return response;
-            }
-            catch (System.Exception ex) when (IsNetworkError(ex) || ex is TaskCanceledException)
-            {
-                // unable to connect to API because of network/timeout
-                throw new ConnectionException("Network error while connecting to the API", ex);
-            }
-        }
+				var response = await client.SendAsync(request);
 
-        private static bool IsNetworkError(System.Exception ex)
-        {
-            if (ex is SocketException)
-                return true;
-            if (ex.InnerException != null)
-                return IsNetworkError(ex.InnerException);
-            return false;
-        }
-    }
+				if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+				{
+					// 503 Service Unavailable
+					throw new GatewayException("Service is unavailable, gateway connection error");
+				}
+
+				if (response.StatusCode == (HttpStatusCode)429)
+				{
+					// 429 Too many requests
+					throw new ThrottleException("HTTP request was throttled");
+				}
+
+				return response;
+			}
+			catch (System.Exception ex) when (IsNetworkError(ex) || ex is TaskCanceledException)
+			{
+				// unable to connect to API because of network/timeout
+				throw new ConnectionException("Network error while connecting to the API", ex);
+			}
+		}
+
+		private static bool IsNetworkError(System.Exception ex)
+		{
+			if (ex is SocketException)
+				return true;
+			if (ex.InnerException != null)
+				return IsNetworkError(ex.InnerException);
+			return false;
+		}
+	}
 }

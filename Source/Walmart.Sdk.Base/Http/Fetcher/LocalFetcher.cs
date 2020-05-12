@@ -95,7 +95,7 @@ namespace Walmart.Sdk.Base.Http.Fetcher
             }
         }
 
-        private Response BuildResponseObject(string content, System.Net.HttpStatusCode code)
+        private Response BuildResponseObject(string content, System.Net.HttpStatusCode code, string correlationId)
         {
             var httpResponse = new HttpResponseMessage()
             {
@@ -103,12 +103,12 @@ namespace Walmart.Sdk.Base.Http.Fetcher
                 StatusCode = code
             };
             
-            return new Response(httpResponse);
+            return new Response(httpResponse, correlationId);
         }
 
         override public Task<IResponse> ExecuteAsync(IRequest request)
         {
-            var fullKey = request.Method.Method + "_" + request.EndpointUri + request.BuildQueryParams();
+			var fullKey = request.Method.Method + "_" + request.EndpointUri + request.BuildQueryParams();
             var longestMappingKey = "";
             foreach (var key in mapping.Keys)
             {
@@ -133,7 +133,7 @@ namespace Walmart.Sdk.Base.Http.Fetcher
                 Int32.TryParse(filename.Substring(filename.Length-9, 3), out code);
             }
 
-            var response = BuildResponseObject(content, (System.Net.HttpStatusCode)code);
+            var response = BuildResponseObject(content, (System.Net.HttpStatusCode)code, request.CorrelationId);
             return Task.FromResult<IResponse>(response);
         }
     }

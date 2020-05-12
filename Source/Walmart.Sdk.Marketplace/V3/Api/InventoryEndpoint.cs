@@ -16,24 +16,76 @@ limitations under the License.
 
 namespace Walmart.Sdk.Marketplace.V3.Api
 {
-    using System.Threading.Tasks;
-    using Walmart.Sdk.Base.Http;
-    using Walmart.Sdk.Marketplace.V3.Payload.Feed;
+	using System;
+	using System.Collections.Generic;
+	using System.Threading.Tasks;
+	using Walmart.Sdk.Base.Primitive;
+	using Walmart.Sdk.Marketplace.V3.Payload.Feed;
+	using Walmart.Sdk.Marketplace.V3.Payload.Inventory;
 
-    public class InventoryEndpoint: Base.Primitive.BaseEndpoint
-    {
-        private FeedEndpoint feedApi;
+	public class InventoryEndpoint : Base.Primitive.BaseEndpoint
+	{
+		private FeedEndpoint feedApi;
 
-        public InventoryEndpoint(Base.Primitive.IEndpointClient client) : base(client)
-        {
-            feedApi = new FeedEndpoint(apiClient);
-            payloadFactory = new V3.Payload.PayloadFactory();
-        }
+		public InventoryEndpoint(Base.Primitive.IEndpointClient client) : base(client)
+		{
+			feedApi = new FeedEndpoint(apiClient);
+			payloadFactory = new V3.Payload.PayloadFactory();
+		}
 
-        /* proxy call to Feed endpoint */
-        public async Task<FeedAcknowledgement> UpdateBulkInventory(System.IO.Stream file)
-        {
-            return await feedApi.UploadFeed(file, V3.Payload.FeedType.inventory);
-        }
-    }
+		public async Task<Inventory> GetItem(string sku, string shipNode = null)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
+
+			var request = CreateRequest();
+
+			request.EndpointUri = "/v3/inventory";
+
+			request.QueryParams.Add("sku", sku);
+			request.QueryParams.Add("shipNode", shipNode);
+
+			var response = await client.GetAsync(request);
+			var result = await ProcessResponse<Inventory>(response);
+			return result;
+		}
+
+		public async Task<Inventory> UpdateItem(Inventory inventory, string shipNode = null)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
+
+			var request = CreateRequest();
+
+			request.EndpointUri = "/v3/inventory";
+			request.AddPayload(inventory);
+			request.QueryParams.Add("sku", inventory.Sku);
+			request.QueryParams.Add("shipNode", shipNode);
+
+			var response = await client.PutAsync(request);
+			var result = await ProcessResponse<Inventory>(response);
+			return result;
+		}
+
+
+		/* proxy call to Feed endpoint */
+		public async Task<FeedAcknowledgement> UpdateBulkInventory(System.IO.Stream file)
+		{
+			return await feedApi.UploadFeed(file, V3.Payload.FeedType.inventory);
+		}
+
+		public async Task<FeedAcknowledgement> UpdateBulkInventory(List<Inventory> inventoryItems)
+		{
+			InventoryFeed inventoryFeed = new InventoryFeed
+			{
+				InventoryHeader = new InventoryHeader
+				{
+					FeedDate = DateTime.UtcNow,
+					Version = InventoryHeaderVersion.Item14,
+				},
+				Items = inventoryItems,
+			};
+			return await feedApi.UploadFeed(inventoryFeed, V3.Payload.FeedType.inventory);
+		}
+	}
 }

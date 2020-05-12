@@ -16,60 +16,61 @@ limitations under the License.
 
 using System;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Walmart.Sdk.Base.Http;
-using Walmart.Sdk.Base.Primitive.Config;
 using Walmart.Sdk.Base.Serialization;
 
 namespace Walmart.Sdk.Base.Primitive
 {
-    public class BaseEndpoint
-    {
-        protected Config.IEndpointConfig config;
-        protected IPayloadFactory payloadFactory;
-        protected IEndpointHttpHandler client;
-        protected Base.Primitive.IEndpointClient apiClient;
+	public class BaseEndpoint
+	{
+		protected Config.IEndpointConfig config;
+		protected IPayloadFactory payloadFactory;
+		protected IEndpointHttpHandler client;
+		protected Base.Primitive.IEndpointClient apiClient;
+		public object ApiException { get; private set; }
 
-        public object ApiException { get; private set; }
 
-        public BaseEndpoint(IEndpointClient apiClient)
-        {
-            this.apiClient = apiClient;
-            client = apiClient.GetHttpHandler();
-            config = apiClient.GetEndpointConfig();
-        }
+		public BaseEndpoint(IEndpointClient apiClient)
+		{
+			this.apiClient = apiClient;
+			client = apiClient.GetHttpHandler();
+			config = apiClient.GetEndpointConfig();
+		}
 
-        protected Request CreateRequest()
-        {
-            return new Request(config.GetRequestConfig());
-        }
+		protected Request CreateRequest()
+		{
+			return new Request(config.GetRequestConfig());
+		}
 
-        public async Task<TPayload> ProcessResponse<TPayload>(IResponse response)
-        {
-            if (!response.IsSuccessful)
-            {
-                var rawErrors = await response.GetPayloadAsString();
-                System.Exception ex;
-                try
-                {
-                    ex = payloadFactory.CreateApiException(config.ApiFormat, rawErrors, response);
-                }
-                catch (System.Exception e)
-                {
-                    var innerEx = new System.Exception("Error response is " + rawErrors, e);
-                    throw new Base.Exception.InvalidValueException("Invalid error response received. Unable to parse with error!", innerEx);
-                }
+		public async Task<TPayload> ProcessResponse<TPayload>(IResponse response)
+		{
+			if (!response.IsSuccessful)
+			{
+				var rawErrors = await response.GetPayloadAsString();
+				System.Exception ex;
+				try
+				{
+					ex = payloadFactory.CreateApiException(config.ApiFormat, rawErrors, response);
+				}
+				catch (System.Exception e)
+				{
+					var innerEx = new System.Exception("Error response is " + rawErrors, e);
+					throw new Base.Exception.InvalidValueException("Invalid error response received. Unable to parse with error!", innerEx);
+				}
 
-                throw ex;
-            }
-            string content = await response.GetPayloadAsString();
-            var serializer = payloadFactory.GetSerializer(config.ApiFormat);
-            return serializer.Deserialize<TPayload>(content);
-        }
+				throw ex;
+			}
+			string content = await response.GetPayloadAsString();
 
-        public ISerializer GetSerializer()
-        {
-            return payloadFactory.GetSerializer(config.ApiFormat);
-        }
-    }
+			await Util.LogToFile.WriteLogString(response.CorrelationId, content, "Response", config.ApiFormat.ToString().ToLower());
+
+			var serializer = payloadFactory.GetSerializer(config.ApiFormat);
+			return serializer.Deserialize<TPayload>(content);
+		}
+
+		public ISerializer GetSerializer()
+		{
+			return payloadFactory.GetSerializer(config.ApiFormat);
+		}
+	}
 }

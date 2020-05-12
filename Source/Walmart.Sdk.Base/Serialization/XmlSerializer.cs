@@ -44,10 +44,10 @@ namespace Walmart.Sdk.Base.Serialization
         {
             var serializer = new System.Xml.Serialization.XmlSerializer(typeof(TPayload));
             var stringWriter = new Utf8StringWriter();
-            if (((IPayload) item).Xmlns.Count > 0)
+            //if (((IPayload) item).Xmlns.Count > 0)
 
-                serializer.Serialize(stringWriter, item, ((IPayload) item).Xmlns);
-            else
+            //    serializer.Serialize(stringWriter, item, ((IPayload) item).Xmlns);
+            //else
                 serializer.Serialize(stringWriter, item);
 
             return stringWriter.ToString();

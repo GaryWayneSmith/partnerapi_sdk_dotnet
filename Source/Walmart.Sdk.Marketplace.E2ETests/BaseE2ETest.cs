@@ -61,13 +61,14 @@ namespace Walmart.Sdk.Marketplace.E2ETests
             using (var credsStream = File.OpenText("credentials.json"))
             {
                 Dictionary<string, string> creds = json.Deserialize<Dictionary<string, string>>(new JsonTextReader(credsStream));
-                if (!creds.ContainsKey("ConsumerId") || !creds.ContainsKey("PrivateKey"))
+                if (!creds.ContainsKey("CustomerId") 
+					|| !creds.ContainsKey("CustomerSecret"))
                 {
                     
                     throw new System.Exception("Credentials file has incorrect format!");
                 }
-                settings.Add("consumerId", creds["ConsumerId"]);
-                settings.Add("privateKey", creds["PrivateKey"]);
+                settings.Add("customerId", creds["CustomerId"]);
+                settings.Add("customerSecret", creds["CustomerSecret"]);
             }
         }
 
@@ -79,8 +80,8 @@ namespace Walmart.Sdk.Marketplace.E2ETests
             }
 
             config = new Marketplace.ClientConfig(
-                settings["consumerId"],
-                settings["privateKey"]
+                settings["customerId"],
+                settings["customerSecret"]
             );
             config.BaseUrl = settings["BaseUrl"];
             config.ChannelType = settings["ChannelType"];

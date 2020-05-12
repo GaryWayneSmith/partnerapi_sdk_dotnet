@@ -18,134 +18,107 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Walmart.Sdk.Base.Http;
 using Walmart.Sdk.Base.Primitive;
+using Walmart.Sdk.Base.Serialization;
 
 namespace Walmart.Sdk.Base.Http
 {
-    public class Request: IRequest
-    {
-        private Primitive.Config.IRequestConfig config;
-        public Primitive.Config.IRequestConfig Config { get { return config; } }
-        public string EndpointUri { get; set; }
-        public HttpRequestMessage HttpRequest { get; }
-        public Dictionary<string, string> QueryParams { get; set; } = new Dictionary<string, string>();
+	public class Request : IRequest
+	{
+		public Primitive.Config.IRequestConfig Config { get; private set; }
+		public string EndpointUri { get; set; }
+		public HttpRequestMessage HttpRequest { get; }
+		public Dictionary<string, string> QueryParams { get; set; } = new Dictionary<string, string>();
+		public string CorrelationId { get; private  set; }
 
-        public HttpMethod Method
-        {
-            get { return HttpRequest.Method; }
-            set { HttpRequest.Method = value; }
-        }
+		public HttpMethod Method
+		{
+			get { return HttpRequest.Method; }
+			set { HttpRequest.Method = value; }
+		}
 
-        public Request(Primitive.Config.IRequestConfig cfg)
-        {
-            config = cfg;
-            HttpRequest = new HttpRequestMessage();
-        }
+		public Request(Primitive.Config.IRequestConfig cfg)
+		{
+			Config = cfg;
+			HttpRequest = new HttpRequestMessage();
+			CorrelationId = cfg.NewCorrelationId();
+		}
 
-        public void AddMultipartContent(byte[] content)
-        {
-            var multipartContent = new MultipartFormDataContent
-            {
-                new ByteArrayContent(content)
-            };
-            HttpRequest.Content = multipartContent;
-        }
+		public void AddMultipartContent(byte[] content)
+		{
+			var multipartContent = new MultipartFormDataContent
+			{
+				new ByteArrayContent(content)
+			};
+			HttpRequest.Content = multipartContent;
+		}
 
-        public void AddMultipartContent(System.IO.Stream contentStream)
-        {
-            var multipartContent = new MultipartFormDataContent();
-            multipartContent.Add(new StreamContent(contentStream));
-            HttpRequest.Content = multipartContent;
-        }
+		public void AddMultipartContent(System.IO.Stream contentStream)
+		{
+			var multipartContent = new MultipartFormDataContent
+			{
+				new StreamContent(contentStream)
+			};
+			HttpRequest.Content = multipartContent;
+		}
 
-        public void AddPayload(string payload)
-        {
-            HttpRequest.Content = new StringContent((string)payload, Encoding.UTF8, GetContentType());
-        }
+		public void AddPayload<T>(T payload)
+		{
+			var data= new SerializerFactory().GetSerializer(Config.ApiFormat).Serialize(payload);
+			HttpRequest.Content = new StringContent(data, Encoding.UTF8, Config.GetContentType);
+		}
 
-        public string BuildQueryParams()
-        {
-            var list = new List<string>();
-            foreach (var param in this.QueryParams)
-            {
-                if (param.Value != null) {
-                    list.Add(param.Key + "=" + param.Value);    
-                }
-            }
-            if (list.Count > 0)
-            {
-                return "?" + string.Join("&", list);
-            }
-            return "";
-        }
 
-        public void FinalizePreparation()
-        {
-            HttpRequest.Headers.Add("User-Agent", config.UserAgent.Replace(" ", "_"));
-            HttpRequest.RequestUri = new Uri(config.BaseUrl + EndpointUri + BuildQueryParams());
-            // call to genereate walmart headers should be done when RequestUri already defined
-            // we need it's value to generate signature header
-            AddWalmartHeaders();
-        }
+		public void AddPayload(string payload)
+		{
+			HttpRequest.Content = new StringContent((string)payload, Encoding.UTF8, Config.GetContentType);
+		}
 
-        private void AddWalmartHeaders()
-        {
-            string timestamp = Util.DigitalSignature.GetCurrentTimestamp();
-            string signature = GetSignature(timestamp);
+		public string BuildQueryParams()
+		{
+			var list = new List<string>();
+			foreach (var param in QueryParams)
+			{
+				if (param.Value != null)
+				{
+					list.Add(param.Key + "=" + param.Value);
+				}
+			}
+			if (list.Count > 0)
+			{
+				return "?" + string.Join("&", list);
+			}
+			return "";
+		}
+		public async Task ValidateAccessToken()
+		{
+			await Config.ValidateAccessToken();
+		}
 
-            var creds = config.Credentials;
-            HttpRequest.Headers.Add("WM_SEC.AUTH_SIGNATURE", signature);
-            HttpRequest.Headers.Add("WM_SEC.TIMESTAMP", timestamp);
-            HttpRequest.Headers.Add("WM_CONSUMER.CHANNEL.TYPE", config.ChannelType);
-            HttpRequest.Headers.Add("WM_CONSUMER.ID", creds.ConsumerId);
-            HttpRequest.Headers.Add("WM_SVC.NAME", config.ServiceName);
-            HttpRequest.Headers.Add("WM_QOS.CORRELATION_ID", Util.DigitalSignature.GetCorrelationId());
+		public void FinalizePreparation()
+		{
+			HttpRequest.Headers.Add(Headers.USER_AGENT, Config.UserAgent.Replace(" ", "_"));
+			HttpRequest.RequestUri = new Uri(Config.BaseUrl + EndpointUri + BuildQueryParams());
+			// call to genereate walmart headers should be done when RequestUri already defined
+			// we need it's value to generate signature header
+			AddWalmartHeaders();
+		}
 
-            HttpRequest.Headers.Add("Accept", GetContentType());
-        }
+		private void AddWalmartHeaders()
+		{
+			var creds = Config.Credentials;
 
-        public string GetContentType()
-        {
-            switch (config.ApiFormat)
-            {
-                case Primitive.ApiFormat.JSON:
-                    return "application/json";
-                default:
-                case Primitive.ApiFormat.XML:
-                    return "application/xml";
-            }
-        }
+			HttpRequest.Headers.Add(Headers.WM_SVC_NAME, Config.ServiceName);
+			if (!string.IsNullOrWhiteSpace(Config.ChannelType))
+				HttpRequest.Headers.Add(Headers.WM_CONSUMER_CHANNEL_TYPE, Config.ChannelType);
+			HttpRequest.Headers.Add(Headers.AUTHORIZATION, creds.Authorization);
+			HttpRequest.Headers.Add(Headers.WM_SEC_ACCESS_TOKEN, Config.AccessToken);
+			HttpRequest.Headers.Add(Headers.WM_QOS_CORRELATION_ID, CorrelationId);
+			// Must go last.
+			HttpRequest.Headers.Add(Headers.ACCEPT, Config.GetContentType);
+		}
 
-        private string GetSignature(string timestamp)
-        {
-            if (config.Credentials is null)
-            {
-                throw new Base.Exception.InitException("Configuration is not initialized with Merchant Credentials!");
-            }
 
-            var creds = config.Credentials;
-            var requestUri = HttpRequest.RequestUri.ToString();
-            var httpMethod = HttpRequest.Method.Method.ToUpper();
-            // Construct the string to sign
-            string stringToSign = string.Join("\n", new List<string>() {
-                creds.ConsumerId,
-                requestUri,
-                httpMethod,
-                timestamp
-            }) + "\n"; // extra newline symbol required for valid signature
-
-            try
-            {
-                return Util.DigitalSignature.SignData(stringToSign, creds.PrivateKey);
-            }
-            catch (System.Exception ex)
-            {
-                //pop up this to the user of SDK 
-                throw Base.Exception.SignatureException.Factory(creds.ConsumerId, requestUri, httpMethod, ex);
-            }
-        }
-    }
+	}
 }

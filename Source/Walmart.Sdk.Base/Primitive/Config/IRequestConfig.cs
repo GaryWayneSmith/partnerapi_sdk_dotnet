@@ -15,19 +15,25 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Walmart.Sdk.Base.Primitive.Config
 {
-    public interface IRequestConfig
-    {
-        ApiFormat ApiFormat { get; }
-        string BaseUrl { get; }
-        string ServiceName { get; }
-        string ChannelType { get; }
-        string UserAgent { get; }
-        Credentials Credentials { get; }
-        int RequestTimeoutMs { get; }
-    }
+	public interface IRequestConfig
+	{
+		ApiFormat ApiFormat { get; }
+		string BaseUrl { get; }
+		string ServiceName { get; }
+		string ChannelType { get; }
+		string UserAgent { get; }
+		ICredentials Credentials { get; }
+		int RequestTimeoutMs { get; }
+		string NewCorrelationId();
+		string AccessToken { get; }
+		string TokenType { get; }
+		DateTime Expires { get; }
+		bool IsExpired { get; }
+		Task ValidateAccessToken();
+		string GetContentType { get; }
+	}
 }

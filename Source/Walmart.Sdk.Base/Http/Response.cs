@@ -15,34 +15,33 @@ limitations under the License.
 */
 
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
-using Walmart.Sdk.Base.Primitive;
 
 namespace Walmart.Sdk.Base.Http
 {
-    public class Response: IResponse
-    {
-        private HttpResponseMessage originalResponse;
-        public HttpStatusCode StatusCode
-        {
-            get { return originalResponse.StatusCode; }
-        }
-        public Response(HttpResponseMessage response)
-        {
-            originalResponse = response;
-        }
+	public class Response : IResponse
+	{
+		private HttpResponseMessage originalResponse;
+		public string CorrelationId { get; private set; }
+		public HttpStatusCode StatusCode
+		{
+			get { return originalResponse.StatusCode; }
+		}
+		public Response(HttpResponseMessage response, string correlationId)
+		{
+			originalResponse = response;
+			CorrelationId = correlationId;
+		}
 
-        public HttpResponseMessage RawResponse { get { return originalResponse; } }
+		public HttpResponseMessage RawResponse { get { return originalResponse; } }
 
-        public bool IsSuccessful { get { return originalResponse.IsSuccessStatusCode;  } }
+		public bool IsSuccessful { get { return originalResponse.IsSuccessStatusCode; } }
 
-        public async Task<string> GetPayloadAsString()
-        {
-            return await originalResponse.Content.ReadAsStringAsync();
-        }
-    }
+		public async Task<string> GetPayloadAsString()
+		{
+			return await originalResponse.Content.ReadAsStringAsync();
+		}
+	}
 }

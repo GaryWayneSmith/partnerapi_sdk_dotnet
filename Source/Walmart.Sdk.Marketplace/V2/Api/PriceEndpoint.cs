@@ -45,7 +45,7 @@ namespace Walmart.Sdk.Marketplace.V2.Api
             request.QueryParams.Add("currency", currency);
             request.QueryParams.Add("price", price.ToString());
             request.HttpRequest.Content = new StringContent("");
-            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.GetContentType());
+            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType);
 
             var response = await client.PutAsync(request);
             var result = await ProcessResponse<ItemPriceResponse>(response);

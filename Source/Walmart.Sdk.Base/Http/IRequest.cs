@@ -15,18 +15,21 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
+using System.Threading.Tasks;
+using Walmart.Sdk.Base.Primitive.Config;
 
 namespace Walmart.Sdk.Base.Http
 {
-    public interface IRequest
-    {
-        string EndpointUri { get; }
-        HttpRequestMessage HttpRequest { get; }
-        void FinalizePreparation();
-        HttpMethod Method { get; set; }
-        string BuildQueryParams();
-    }
+	public interface IRequest
+	{
+		string EndpointUri { get; }
+		HttpRequestMessage HttpRequest { get; }
+		void FinalizePreparation();
+		HttpMethod Method { get; set; }
+		string BuildQueryParams();
+		Task ValidateAccessToken();
+		IRequestConfig Config { get; }
+		string CorrelationId { get; }
+	}
 }

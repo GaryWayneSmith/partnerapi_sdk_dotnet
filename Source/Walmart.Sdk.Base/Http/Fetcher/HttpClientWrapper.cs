@@ -46,7 +46,7 @@ namespace Walmart.Sdk.Base.Http.Fetcher
         public async Task<IResponse> SendAsync(IRequest request)
         {
             var result = await client.SendAsync(request.HttpRequest);
-            return (IResponse)new Response(result);
+            return (IResponse)new Response(result, request.CorrelationId);
         }
     }
 }

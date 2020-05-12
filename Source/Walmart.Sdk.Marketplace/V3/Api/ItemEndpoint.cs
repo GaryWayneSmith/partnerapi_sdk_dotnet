@@ -51,7 +51,22 @@ namespace Walmart.Sdk.Marketplace.V3.Api
             return result;
         }
 
-        public async Task<ItemResponse> GetItem(string merchantSku)
+		public async Task<ItemResponses> GetAllItems(string nextCursor)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
+
+			var request = CreateRequest();
+			request.EndpointUri = "/v3/items";
+			request.QueryParams.Add("nextCursor", nextCursor.ToString());
+			
+			var response = await client.GetAsync(request);
+			ItemResponses result = await ProcessResponse<ItemResponses>(response);
+			return result;
+		}
+
+
+		public async Task<ItemResponse> GetItem(string merchantSku)
         {
             // to avoid deadlock if this method is executed synchronously
             await new ContextRemover();

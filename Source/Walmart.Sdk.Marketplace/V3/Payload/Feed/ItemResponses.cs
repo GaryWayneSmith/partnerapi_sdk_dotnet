@@ -40,7 +40,13 @@ namespace Walmart.Sdk.Marketplace.V3.Payload.Feed
         /// </summary>
         [XmlElement("additionalAttributes")]
         public NameValueAttributes AdditionalAttributes { get; set; }
-    
+
+		[XmlElement("totalItems")]
+		public int TotalItems { get; set; }
+
+		[XmlElement("nextCursor")]
+		public string NextCursor { get; set; }
+
         /// <summary>
         /// ItemResponses class constructor
         /// </summary>

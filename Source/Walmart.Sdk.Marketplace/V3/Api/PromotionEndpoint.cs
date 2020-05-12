@@ -56,7 +56,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
             var payload = new StreamReader(stream).ReadToEnd();
             request.HttpRequest.Content = new StringContent(payload);
             //set the headers to avoid broken responses because of encodding=utf-8
-            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.GetContentType());
+            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType);
 
             var response = await client.PutAsync(request);
             var result = await ProcessResponse<ItemPriceResponse>(response);
