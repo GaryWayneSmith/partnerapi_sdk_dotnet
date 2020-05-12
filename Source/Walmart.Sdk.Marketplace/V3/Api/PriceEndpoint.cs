@@ -53,7 +53,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
             request.HttpRequest.Content = new StringContent(payload);
             // have to explicitly set this header for content, otherwise it also has encodding=utf-8
             // and it breaks response from API
-            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType);
+            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType(ApiFormat.XML));
 
             var response = await client.PutAsync(request);
             
@@ -77,7 +77,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
             {
                 Enroll = enroll
             });
-            request.HttpRequest.Content = new StringContent(content, Encoding.UTF8, "application/json");
+            request.HttpRequest.Content = new StringContent(content, Encoding.UTF8, request.Config.GetContentType(ApiFormat.JSON));
             request.HttpRequest.Headers.Add("Accept", "application/json");
             
             var response = await client.PostAsync(request);

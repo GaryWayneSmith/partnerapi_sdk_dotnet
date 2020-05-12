@@ -16,56 +16,56 @@ limitations under the License.
 
 namespace Walmart.Sdk.Marketplace.V3.Api
 {
-    using System.Net.Http;
-    using System.Net.Http.Headers;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Walmart.Sdk.Base.Primitive;
-    using Walmart.Sdk.Marketplace.V3.Payload.Feed;
-    using Walmart.Sdk.Marketplace.V3.Payload.Promotion;
-    using Walmart.Sdk.Marketplace.V3.Payload;
+	using System.IO;
+	using System.Net.Http;
+	using System.Net.Http.Headers;
+	using System.Threading.Tasks;
+	using Walmart.Sdk.Base.Primitive;
+	using Walmart.Sdk.Marketplace.V3.Payload;
+	using Walmart.Sdk.Marketplace.V3.Payload.Feed;
+	using Walmart.Sdk.Marketplace.V3.Payload.Promotion;
 
-    public class PromotionEndpoint : Base.Primitive.BaseEndpoint
-    {
-        protected FeedEndpoint feedApi;
-        public PromotionEndpoint(Base.Primitive.IEndpointClient apiClient) : base(apiClient)
-        {
-            feedApi = new FeedEndpoint(apiClient);
-            payloadFactory = new V3.Payload.PayloadFactory();
-        }
-        public async Task<ServiceResponse> GetPromotionPrice(string merchantSku)
-        {
-            // to avoid deadlock if this method is executed synchronously
-            await new ContextRemover();
+	public class PromotionEndpoint : Base.Primitive.BaseEndpoint
+	{
+		protected FeedEndpoint feedApi;
+		public PromotionEndpoint(Base.Primitive.IEndpointClient apiClient) : base(apiClient)
+		{
+			feedApi = new FeedEndpoint(apiClient);
+			payloadFactory = new V3.Payload.PayloadFactory();
+		}
+		public async Task<ServiceResponse> GetPromotionPrice(string merchantSku)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
 
-            var request = CreateRequest();
-            request.EndpointUri = string.Format("/v3/promo/sku/{0}", merchantSku);
-            var response = await client.GetAsync(request);
+			var request = CreateRequest();
+			request.EndpointUri = string.Format("/v3/promo/sku/{0}", merchantSku);
+			var response = await client.GetAsync(request);
 
-            ServiceResponse result = await ProcessResponse<ServiceResponse>(response);
-            return result;
-        }
+			ServiceResponse result = await ProcessResponse<ServiceResponse>(response);
+			return result;
+		}
 
-        public async Task<ItemPriceResponse> UpdatePromotionPrice(Stream stream)
-        {
-            // to avoid deadlock if this method is executed synchronously
-            await new ContextRemover();
+		public async Task<ItemPriceResponse> UpdatePromotionPrice(Stream stream)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
 
-            var request = CreateRequest();
-            request.EndpointUri = "/v3/price?promo=true";
-            var payload = new StreamReader(stream).ReadToEnd();
-            request.HttpRequest.Content = new StringContent(payload);
-            //set the headers to avoid broken responses because of encodding=utf-8
-            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType);
+			var request = CreateRequest();
+			request.EndpointUri = "/v3/price?promo=true";
+			var payload = new StreamReader(stream).ReadToEnd();
+			request.HttpRequest.Content = new StringContent(payload);
+			//set the headers to avoid broken responses because of encodding=utf-8
+			request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType(ApiFormat.XML));
 
-            var response = await client.PutAsync(request);
-            var result = await ProcessResponse<ItemPriceResponse>(response);
-            return result;
-        }
+			var response = await client.PutAsync(request);
+			var result = await ProcessResponse<ItemPriceResponse>(response);
+			return result;
+		}
 
-        public async Task<FeedAcknowledgement> UpdateBulkPromotions(Stream stream)
-        {
-            return await feedApi.UploadFeed(stream, FeedType.promo);
-        }
-    }
+		public async Task<FeedAcknowledgement> UpdateBulkPromotions(Stream stream)
+		{
+			return await feedApi.UploadFeed(stream, FeedType.promo);
+		}
+	}
 }

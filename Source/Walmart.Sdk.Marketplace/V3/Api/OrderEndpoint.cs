@@ -44,7 +44,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			await new ContextRemover();
 
 			var request = CreateRequest();
-
+			request.ApiFormat = ApiFormat.XML;
 			request.EndpointUri = "/v3/orders/released";
 
 			if (limit < 1) limit = 1;
@@ -65,7 +65,8 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			await new ContextRemover();
 
 			var request = CreateRequest();
-			request.EndpointUri = String.Format("/v3/orders/released/{0}", nextCursor);
+			request.ApiFormat = ApiFormat.XML;
+			request.EndpointUri = string.Format("/v3/orders/released/{0}", nextCursor);
 			var response = await client.GetAsync(request);
 			var result = await ProcessResponse<OrdersListType>(response);
 			return result;
@@ -77,7 +78,8 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			await new ContextRemover();
 
 			var request = CreateRequest();
-			request.EndpointUri = String.Format("/v3/orders/{0}", purchaseOrderId);
+			request.ApiFormat = ApiFormat.XML;
+			request.EndpointUri = string.Format("/v3/orders/{0}", purchaseOrderId);
 			var response = await client.GetAsync(request);
 			var result = await ProcessResponse<Order>(response);
 			return result;
@@ -89,6 +91,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			await new ContextRemover();
 
 			var request = CreateRequest();
+			request.ApiFormat = ApiFormat.XML;
 			filter.FullfilRequest(request);
 			request.EndpointUri = "/v3/orders";
 			var response = await client.GetAsync(request);
@@ -102,7 +105,8 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			await new ContextRemover();
 
 			var request = CreateRequest();
-			request.EndpointUri = String.Format("/v3/orders/{0}", nextCursor);
+			request.ApiFormat = ApiFormat.XML;
+			request.EndpointUri = string.Format("/v3/orders/{0}", nextCursor);
 			var response = await client.GetAsync(request);
 			var result = await ProcessResponse<OrdersListType>(response);
 			return result;
@@ -133,6 +137,7 @@ namespace Walmart.Sdk.Marketplace.V3.Api
 			}
 
 			var request = CreateRequest();
+			request.ApiFormat = ApiFormat.XML;
 
 			// Allow for stream or conventional typed payload
 			if (payload != null)

@@ -30,7 +30,9 @@ namespace Walmart.Sdk.Base.Http
 		public string EndpointUri { get; set; }
 		public HttpRequestMessage HttpRequest { get; }
 		public Dictionary<string, string> QueryParams { get; set; } = new Dictionary<string, string>();
-		public string CorrelationId { get; private  set; }
+		public string CorrelationId { get; private set; }
+
+		public ApiFormat ApiFormat { get; set; }
 
 		public HttpMethod Method
 		{
@@ -43,6 +45,7 @@ namespace Walmart.Sdk.Base.Http
 			Config = cfg;
 			HttpRequest = new HttpRequestMessage();
 			CorrelationId = cfg.NewCorrelationId();
+			ApiFormat = cfg.ApiFormat;
 		}
 
 		public void AddMultipartContent(byte[] content)
@@ -65,14 +68,13 @@ namespace Walmart.Sdk.Base.Http
 
 		public void AddPayload<T>(T payload)
 		{
-			var data= new SerializerFactory().GetSerializer(Config.ApiFormat).Serialize(payload);
-			HttpRequest.Content = new StringContent(data, Encoding.UTF8, Config.GetContentType);
+			var data = new SerializerFactory().GetSerializer(ApiFormat).Serialize(payload);
+			HttpRequest.Content = new StringContent(data, Encoding.UTF8, Config.GetContentType(ApiFormat));
 		}
 
-
-		public void AddPayload(string payload)
+		public void AddPayload(string payload, ApiFormat apiFormat)
 		{
-			HttpRequest.Content = new StringContent((string)payload, Encoding.UTF8, Config.GetContentType);
+			HttpRequest.Content = new StringContent((string)payload, Encoding.UTF8, Config.GetContentType(ApiFormat));
 		}
 
 		public string BuildQueryParams()
@@ -116,7 +118,7 @@ namespace Walmart.Sdk.Base.Http
 			HttpRequest.Headers.Add(Headers.WM_SEC_ACCESS_TOKEN, Config.AccessToken);
 			HttpRequest.Headers.Add(Headers.WM_QOS_CORRELATION_ID, CorrelationId);
 			// Must go last.
-			HttpRequest.Headers.Add(Headers.ACCEPT, Config.GetContentType);
+			HttpRequest.Headers.Add(Headers.ACCEPT, Config.GetContentType(Config.ApiFormat));
 		}
 
 

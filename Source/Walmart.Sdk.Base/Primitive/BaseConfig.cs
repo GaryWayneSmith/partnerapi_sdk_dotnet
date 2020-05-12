@@ -64,21 +64,17 @@ namespace Walmart.Sdk.Base.Primitive
 			return Guid.NewGuid().ToString();
 		}
 
-		public string GetContentType
+		public string GetContentType(ApiFormat apiFormat)
 		{
-			get
+			switch (ApiFormat)
 			{
-				switch (ApiFormat)
-				{
-					case Primitive.ApiFormat.JSON:
-						return "application/json";
-					default:
-					case Primitive.ApiFormat.XML:
-						return "application/xml";
-				}
+				case Primitive.ApiFormat.JSON:
+					return "application/json";
+				default:
+				case Primitive.ApiFormat.XML:
+					return "application/xml";
 			}
 		}
-
 
 		public async Task ValidateAccessToken()
 		{
@@ -110,7 +106,7 @@ namespace Walmart.Sdk.Base.Primitive
 					requestMessage.Headers.Add(Headers.AUTHORIZATION, Credentials.Authorization);
 					requestMessage.Headers.Add(Headers.WM_QOS_CORRELATION_ID, correlationId);
 					// Must go last.
-					requestMessage.Headers.Add(Headers.ACCEPT, GetContentType);
+					requestMessage.Headers.Add(Headers.ACCEPT, GetContentType(ApiFormat.XML));
 
 					requestMessage.Content = new FormUrlEncodedContent(new[]
 					{
@@ -126,11 +122,11 @@ namespace Walmart.Sdk.Base.Primitive
 					string result = await response.Content.ReadAsStringAsync();
 					//Debug.WriteLine(result);
 					Token token = new SerializerFactory()
-						.GetSerializer(ApiFormat)
+						.GetSerializer(ApiFormat.XML)
 						.Deserialize<Token>(result);
 					AccessToken = token.AccessToken;
 					TokenType = token.TokenType;
-					Expires = DateTime.UtcNow.AddSeconds(token.Expires-30);
+					Expires = DateTime.UtcNow.AddSeconds(token.Expires - 30);
 				}
 			}
 		}

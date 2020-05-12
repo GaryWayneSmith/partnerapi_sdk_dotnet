@@ -46,7 +46,7 @@ namespace Walmart.Sdk.Base.Test.Http
 			config.Setup(t => t.BaseUrl).Returns("http://www.test.com");
 			config.Setup(t => t.Credentials).Returns(new Credentials("test", PRIVATE_KEY_EXAMPLE));
 			config.Setup(t => t.ChannelType).Returns("0f3e4dd4-0514-4346-b39d-af0e00ea066d");
-			config.Setup(t => t.GetContentType).Returns("application/xml");
+			config.Setup(t => t.GetContentType(ApiFormat.XML)).Returns("application/xml");
 
 			var request = new Base.Http.Request(config.Object);
 			request.FinalizePreparation();

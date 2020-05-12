@@ -37,7 +37,7 @@ namespace Walmart.Sdk.Base.Primitive
 			config = apiClient.GetEndpointConfig();
 		}
 
-		protected Request CreateRequest()
+		protected Request CreateRequest(ApiFormat? apiFormat = null)
 		{
 			return new Request(config.GetRequestConfig());
 		}
@@ -62,15 +62,15 @@ namespace Walmart.Sdk.Base.Primitive
 			}
 			string content = await response.GetPayloadAsString();
 
-			await Util.LogToFile.WriteLogString(response.CorrelationId, content, "Response", config.ApiFormat.ToString().ToLower());
+			//await Util.LogToFile.WriteLogString(response.CorrelationId, content, "Response", config.ApiFormat.ToString().ToLower());
 
 			var serializer = payloadFactory.GetSerializer(config.ApiFormat);
 			return serializer.Deserialize<TPayload>(content);
 		}
 
-		public ISerializer GetSerializer()
+		public ISerializer GetSerializer(ApiFormat apiFormat)
 		{
-			return payloadFactory.GetSerializer(config.ApiFormat);
+			return payloadFactory.GetSerializer(apiFormat);
 		}
 	}
 }

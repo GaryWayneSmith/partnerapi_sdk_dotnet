@@ -16,45 +16,45 @@ limitations under the License.
 
 namespace Walmart.Sdk.Marketplace.V2.Api
 {
-    using System.IO;
-    using System.Net.Http;
-    using System.Net.Http.Headers;
-    using System.Threading.Tasks;
-    using Walmart.Sdk.Base.Primitive;
-    using Walmart.Sdk.Marketplace.V2.Payload;
-    using Walmart.Sdk.Marketplace.V2.Payload.Feed;
+	using System.IO;
+	using System.Net.Http;
+	using System.Net.Http.Headers;
+	using System.Threading.Tasks;
+	using Walmart.Sdk.Base.Primitive;
+	using Walmart.Sdk.Marketplace.V2.Payload;
+	using Walmart.Sdk.Marketplace.V2.Payload.Feed;
 
-    public class PriceEndpoint: BaseEndpoint
-    {
-        private FeedEndpoint feedApi;
+	public class PriceEndpoint : BaseEndpoint
+	{
+		private FeedEndpoint feedApi;
 
-        public PriceEndpoint(IEndpointClient apiClient) : base(apiClient)
-        {
-            feedApi = new FeedEndpoint(apiClient);
-            payloadFactory = new V2.Payload.PayloadFactory();
-        }
+		public PriceEndpoint(IEndpointClient apiClient) : base(apiClient)
+		{
+			feedApi = new FeedEndpoint(apiClient);
+			payloadFactory = new V2.Payload.PayloadFactory();
+		}
 
-        public async Task<ItemPriceResponse> UpdatePrice(string sku, string currency, double price)
-        {
-            // to avoid deadlock if this method is executed synchronously
-            await new ContextRemover();
+		public async Task<ItemPriceResponse> UpdatePrice(string sku, string currency, double price)
+		{
+			// to avoid deadlock if this method is executed synchronously
+			await new ContextRemover();
 
-            var request = CreateRequest();
-            request.EndpointUri = "/v2/prices";
-            request.QueryParams.Add("sku", sku);
-            request.QueryParams.Add("currency", currency);
-            request.QueryParams.Add("price", price.ToString());
-            request.HttpRequest.Content = new StringContent("");
-            request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType);
+			var request = CreateRequest();
+			request.EndpointUri = "/v2/prices";
+			request.QueryParams.Add("sku", sku);
+			request.QueryParams.Add("currency", currency);
+			request.QueryParams.Add("price", price.ToString());
+			request.HttpRequest.Content = new StringContent("");
+			request.HttpRequest.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.Config.GetContentType(ApiFormat.XML));
 
-            var response = await client.PutAsync(request);
-            var result = await ProcessResponse<ItemPriceResponse>(response);
-            return result;
-        }
+			var response = await client.PutAsync(request);
+			var result = await ProcessResponse<ItemPriceResponse>(response);
+			return result;
+		}
 
-        public async Task<FeedAcknowledgement> UpdateBulkPrices(Stream payload)
-        {
-            return await feedApi.UploadFeed(payload, FeedType.price);
-        }
-    }
+		public async Task<FeedAcknowledgement> UpdateBulkPrices(Stream payload)
+		{
+			return await feedApi.UploadFeed(payload, FeedType.price);
+		}
+	}
 }

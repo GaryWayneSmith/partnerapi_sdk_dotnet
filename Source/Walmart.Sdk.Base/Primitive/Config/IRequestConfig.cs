@@ -34,6 +34,6 @@ namespace Walmart.Sdk.Base.Primitive.Config
 		DateTime Expires { get; }
 		bool IsExpired { get; }
 		Task ValidateAccessToken();
-		string GetContentType { get; }
+		string GetContentType(ApiFormat apiFormat);
 	}
 }
